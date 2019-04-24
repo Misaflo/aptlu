@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+
+COLOR_BRANCH      = '2'
+COLOR_NAME        = '38'
+COLOR_OLD_VERSION = '31'
+COLOR_NEW_VERSION = '32'
+
+# @param packages [Array<Hash>]
+# @param largest_name [Integer]
+# @param largest_old_version [Integer]
+# @return [nil]
+def display_upgradable_packages(packages, largest_name, largest_old_version)
+  packages.each do |pkg|
+    # Branch.
+    print "\033[#{COLOR_BRANCH}m#{pkg[:branch]}/\033[0m"
+    # Name.
+    print "\033[#{COLOR_NAME}m#{pkg[:name]}\033[0m "
+    # Alignment.
+    (largest_name - pkg[:name].size).times { print ' ' }
+    # Old version.
+    print "\033[#{COLOR_OLD_VERSION}m#{pkg[:old_version]}\033[0m"
+    # Alignment.
+    (largest_old_version - pkg[:old_version].size).times { print ' ' }
+    # New version.
+    puts " -> \033[#{COLOR_NEW_VERSION}m#{pkg[:new_version]}\033[0m "
+  end
+end
+
+# @return [nil]
+def ask_apt_upgrade
+  answer = ''
+  while !['y', 'n'].include?(answer.downcase)
+    print "Execute apt upgrade? [Y/n] "
+    answer = STDIN.gets.chomp
+    answer = 'y' if answer.empty?
+  end
+
+  system('sudo apt upgrade') if answer.downcase == 'y'
+end
+
+# @return [nil]
+def main
+  # Array of String as displayed by apt list -u:
+  # package_name/branch new_version arch [upgradable from: old_version]
+  packages_str = `apt list -u 2> /dev/null`.split("\n")
+  packages_str.shift
+
+  packages = []
+  largest_name = 0
+  largest_old_version = 0
+
+  # Get name, branch, new version, old version of each package.
+  # Also get largest name and largest old version (for alignment).
+  packages_str.each do |package_str|
+    /(.+)\/([\S]+) ([\S]+) .+ ([\S]+)\]/.match(package_str)
+    pkg = {}
+    pkg[:name] = $1
+    pkg[:branch] = $2
+    pkg[:new_version] = $3
+    pkg[:old_version] = $4
+
+    packages << pkg
+    largest_name = pkg[:name].size if pkg[:name].size > largest_name
+    largest_old_version = pkg[:old_version].size if pkg[:old_version].size > largest_old_version
+  end
+
+  display_upgradable_packages(packages, largest_name, largest_old_version)
+  ask_apt_upgrade unless packages.empty?
+end
+
+main
