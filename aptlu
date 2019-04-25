@@ -11,19 +11,38 @@ COLOR_NEW_VERSION = '32'
 # @return [nil]
 def display_upgradable_packages(packages, largest_name, largest_old_version)
   packages.each do |pkg|
+    first_diff_char = first_diff_char(pkg)
+
     # Branch.
     print "\033[#{COLOR_BRANCH}m#{pkg[:branch]}/\033[0m"
+
     # Name.
     print "\033[#{COLOR_NAME}m#{pkg[:name]}\033[0m "
+
     # Alignment.
     (largest_name - pkg[:name].size).times { print ' ' }
+
     # Old version.
-    print "\033[#{COLOR_OLD_VERSION}m#{pkg[:old_version]}\033[0m"
+    print pkg[:old_version][0..first_diff_char - 1]
+    print "\033[#{COLOR_OLD_VERSION}m#{pkg[:old_version][first_diff_char..-1]}\033[0m "
+
     # Alignment.
     (largest_old_version - pkg[:old_version].size).times { print ' ' }
+
     # New version.
-    puts " -> \033[#{COLOR_NEW_VERSION}m#{pkg[:new_version]}\033[0m "
+    print "→ #{pkg[:new_version][0..first_diff_char - 1]}"
+    puts "\033[#{COLOR_NEW_VERSION}m#{pkg[:new_version][first_diff_char..-1]}\033[0m"
   end
+end
+
+# @param package [Array<Symbol>]
+# @return [Integer]
+def first_diff_char(package)
+  char = 0
+  while package[:old_version][char] == package[:new_version][char]
+    char += 1
+  end
+  char
 end
 
 # @return [nil]
