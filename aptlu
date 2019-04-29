@@ -6,10 +6,10 @@ COLOR_OLD_VERSION = '31'
 COLOR_NEW_VERSION = '32'
 
 # @param packages [Array<Hash>]
-# @param largest_name [Integer]
+# @param largest_branch_name [Integer]
 # @param largest_old_version [Integer]
 # @return [nil]
-def display_upgradable_packages(packages, largest_name, largest_old_version)
+def display_upgradable_packages(packages, largest_branch_name, largest_old_version)
   packages.each do |pkg|
     first_diff_char = first_diff_char(pkg)
 
@@ -20,7 +20,7 @@ def display_upgradable_packages(packages, largest_name, largest_old_version)
     print "\033[#{COLOR_NAME}m#{pkg[:name]}\033[0m "
 
     # Alignment.
-    (largest_name - pkg[:name].size).times { print ' ' }
+    (largest_branch_name - pkg[:branch].size - pkg[:name].size).times { print ' ' }
 
     # Old version.
     print pkg[:old_version][0..first_diff_char - 1]
@@ -65,7 +65,7 @@ def main
   packages_str.shift
 
   packages = []
-  largest_name = 0
+  largest_branch_name = 0 # Largest size of branch + name.
   largest_old_version = 0
 
   # Get name, branch, new version, old version of each package.
@@ -73,17 +73,19 @@ def main
   packages_str.each do |package_str|
     /(.+)\/([\S]+) ([\S]+) .+ ([\S]+)\]/.match(package_str)
     pkg = {}
-    pkg[:name] = $1
-    pkg[:branch] = $2
+    pkg[:name]        = $1
+    pkg[:branch]      = $2
     pkg[:new_version] = $3
     pkg[:old_version] = $4
 
     packages << pkg
-    largest_name = pkg[:name].size if pkg[:name].size > largest_name
+
+    branch_name_size    = pkg[:branch].size + pkg[:name].size
+    largest_branch_name = branch_name_size if branch_name_size > largest_branch_name
     largest_old_version = pkg[:old_version].size if pkg[:old_version].size > largest_old_version
   end
 
-  display_upgradable_packages(packages, largest_name, largest_old_version)
+  display_upgradable_packages(packages, largest_branch_name, largest_old_version)
   ask_apt_upgrade unless packages.empty?
 end
 
