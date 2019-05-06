@@ -23,14 +23,15 @@ def display_upgradable_packages(packages, largest_branch_name, largest_old_versi
     (largest_branch_name - pkg[:branch].size - pkg[:name].size).times { print ' ' }
 
     # Old version.
-    print pkg[:old_version][0..first_diff_char - 1]
+    print pkg[:old_version][0..first_diff_char - 1] unless first_diff_char == 0
     print "\033[#{COLOR_OLD_VERSION}m#{pkg[:old_version][first_diff_char..-1]}\033[0m "
 
     # Alignment.
     (largest_old_version - pkg[:old_version].size).times { print ' ' }
 
     # New version.
-    print "→ #{pkg[:new_version][0..first_diff_char - 1]}"
+    print '→ '
+    print pkg[:new_version][0..first_diff_char - 1] unless first_diff_char == 0
     puts "\033[#{COLOR_NEW_VERSION}m#{pkg[:new_version][first_diff_char..-1]}\033[0m"
   end
 end
