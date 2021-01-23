@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 COLOR_BRANCH      = '2'
 COLOR_NAME        = '38'
@@ -23,7 +24,7 @@ def display_upgradable_packages(packages, largest_branch_name, largest_old_versi
     (largest_branch_name - pkg[:branch].size - pkg[:name].size).times { print ' ' }
 
     # Old version.
-    print pkg[:old_version][0..first_diff_char - 1] unless first_diff_char == 0
+    print pkg[:old_version][0..first_diff_char - 1] unless first_diff_char.zero?
     print "\033[#{COLOR_OLD_VERSION}m#{pkg[:old_version][first_diff_char..-1]}\033[0m "
 
     # Alignment.
@@ -31,7 +32,7 @@ def display_upgradable_packages(packages, largest_branch_name, largest_old_versi
 
     # New version.
     print '→ '
-    print pkg[:new_version][0..first_diff_char - 1] unless first_diff_char == 0
+    print pkg[:new_version][0..first_diff_char - 1] unless first_diff_char.zero?
     puts "\033[#{COLOR_NEW_VERSION}m#{pkg[:new_version][first_diff_char..-1]}\033[0m"
   end
 end
@@ -40,18 +41,16 @@ end
 # @return [Integer]
 def first_diff_char(package)
   char = 0
-  while package[:old_version][char] == package[:new_version][char]
-    char += 1
-  end
+  char += 1 while package[:old_version][char] == package[:new_version][char]
   char
 end
 
 # @return [nil]
 def ask_apt_upgrade
   answer = ''
-  while !['y', 'n'].include?(answer.downcase)
-    print "Execute apt upgrade? [Y/n] "
-    answer = STDIN.gets.chomp
+  until %w[y n].include?(answer.downcase)
+    print 'Execute apt upgrade? [Y/n] '
+    answer = $stdin.gets.chomp
     answer = 'y' if answer.empty?
   end
 
@@ -72,12 +71,12 @@ def main
   # Get name, branch, new version, old version of each package.
   # Also get largest name and largest old version (for alignment).
   packages_str.each do |package_str|
-    /(.+)\/([\S]+) ([\S]+) .+ ([\S]+)\]/.match(package_str)
+    %r{(.+)/(\S+) (\S+) .+ (\S+)\]}.match(package_str)
     pkg = {}
-    pkg[:name]        = $1
-    pkg[:branch]      = $2
-    pkg[:new_version] = $3
-    pkg[:old_version] = $4
+    pkg[:name]        = Regexp.last_match(1)
+    pkg[:branch]      = Regexp.last_match(2)
+    pkg[:new_version] = Regexp.last_match(3)
+    pkg[:old_version] = Regexp.last_match(4)
 
     packages << pkg
 
